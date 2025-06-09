@@ -1,52 +1,68 @@
 import { useEffect, useState } from "react";
-import { useAuthenticator } from '@aws-amplify/ui-react';
-import type { Schema } from "../amplify/data/resource";
+import { useAuthenticator } from "@aws-amplify/ui-react";
 import { generateClient } from "aws-amplify/data";
+import type { Schema } from "../amplify/data/resource";
 
 const client = generateClient<Schema>();
-  
-  
-
 
 function App() {
+  const { user, signOut } = useAuthenticator();
+  const [todos, setTodos] = useState<Schema["Todo"]["type"][]>([]);
 
-    const { user, signOut } = useAuthenticator();
-
-
-  
-  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
-  
-  
-
-  
   useEffect(() => {
-    client.models.Todo.observeQuery().subscribe({
-      next: (data) => setTodos([...data.items]),
-    });
+    // authMode を渡して購読
+    const subscription = client.models.Todo
+      .observeQuery(
+        {}, 
+        { authMode: "userPool" }
+      )
+      .subscribe({
+        next: ({ items }) => setTodos(items),
+      });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  function createTodo() {
-    client.models.Todo.create({ content: window.prompt("Todo content") });
-  }
-    function deleteTodo(id: string) {
-    client.models.Todo.delete({ id })
+  // async にして authMode を指定
+  async function createTodo() {
+    const content = window.prompt("Todo content");
+    if (!content) return;
+
+    const { data, errors } = await client.models.Todo.create(
+      { content },
+      { authMode: "userPool" }
+    );
+
+    if (errors) {
+      console.error("Create error:", errors);
+    } else {
+      console.log("Created:", data);
+    }
   }
 
+  async function deleteTodo(id: string) {
+    const { errors } = await client.models.Todo.delete(
+      { id },
+      { authMode: "userPool" }
+    );
+
+    if (errors) {
+      console.error("Delete error:", errors);
+    }
+  }
 
   return (
     <main>
-     <h1>{user?.signInDetails?.loginId}'s todos</h1>
+      <h1>{user?.signInDetails?.loginId}’s todos</h1>
       <button onClick={createTodo}>+ new</button>
       <ul>
         {todos.map((todo) => (
-     
-              
-          <li
-          onClick={() => deleteTodo(todo.id)}
-            
-            key={todo.id}>{todo.content}</li>
+          <li key={todo.id} onClick={() => deleteTodo(todo.id)}>
+            {todo.content}
+          </li>
         ))}
       </ul>
+
       <div>
         🥳 App successfully hosted. Try creating a new todo.
         <br />
@@ -55,10 +71,10 @@ function App() {
         </a>
       </div>
 
-            <button onClick={signOut}>Sign out</button>
+      <button onClick={signOut}>Sign out</button>
     </main>
   );
 }
 
-
 export default App;
+
