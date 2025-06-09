@@ -1,4 +1,3 @@
-// src/App.tsx
 import { useEffect, useState } from "react";
 import { useAuthenticator } from "@aws-amplify/ui-react";
 import { generateClient } from "aws-amplify/data";
@@ -11,12 +10,8 @@ function App() {
   const [todos, setTodos] = useState<Schema["Todo"]["type"][]>([]);
 
   useEffect(() => {
-    // ① 認証モードを userPool に指定
     const subscription = client.models.Todo
-      .observeQuery(
-        /* filter? */ {},
-        { authMode: "userPool" }
-      )
+      .observeQuery({ authMode: "userPool" })
       .subscribe({
         next: ({ items }) => setTodos(items),
         error: (err) => console.error(err),
@@ -25,7 +20,6 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ② create 時にも authMode を指定
   async function createTodo() {
     const content = window.prompt("Todo content");
     if (!content) return;
@@ -42,7 +36,6 @@ function App() {
     }
   }
 
-  // ③ delete 時にも authMode を指定
   async function deleteTodo(id: string) {
     const { errors } = await client.models.Todo.delete(
       { id },
@@ -65,7 +58,11 @@ function App() {
       <div>
         🥳 App successfully hosted. Try creating a new todo.
         <br />
-        <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
+        <a
+          href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           Review next step of this tutorial.
         </a>
       </div>
@@ -73,6 +70,8 @@ function App() {
     </main>
   );
 }
+
+export default App;
 
 export default App;
 
