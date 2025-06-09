@@ -1,40 +1,62 @@
+import { useEffect, useState } from "react";
+import { useAuthenticator } from '@aws-amplify/ui-react';
 import type { Schema } from "../amplify/data/resource";
-import { useState, useEffect } from "react";
 import { generateClient } from "aws-amplify/data";
 
 const client = generateClient<Schema>();
+  
+  
 
-export default function TodoList() {
-  const [todos, setTodos] = useState<Schema["Todo"]["type"][]>([]);
 
+function App() {
+
+    const { user, signOut } = useAuthenticator();
+
+
+  
+  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
+  
+  
+
+  
   useEffect(() => {
-    const sub = client.models.Todo.observeQuery().subscribe({
-      next: ({ items }) => {
-        setTodos([...items]);
-      },
+    client.models.Todo.observeQuery().subscribe({
+      next: (data) => setTodos([...data.items]),
     });
-
-    return () => sub.unsubscribe();
   }, []);
 
-  const createTodo = async () => {
-    await client.models.Todo.create({
-      content: window.prompt("Todo content?"),
-      isDone: false,
-    });
-    // no more manual refetchTodos required!
-    // - fetchTodos()
-  };
+  function createTodo() {
+    client.models.Todo.create({ content: window.prompt("Todo content") });
+  }
+    function deleteTodo(id: string) {
+    client.models.Todo.delete({ id })
+  }
+
 
   return (
-    <div>
-      <button onClick={createTodo}>Add new todo</button>
+    <main>
+     <h1>{user?.signInDetails?.loginId}'s todos</h1>
+      <button onClick={createTodo}>+ new</button>
       <ul>
-        {todos.map(({ id, content }) => (
-          <li key={id}>{content}</li>
+        {todos.map((todo) => (
+     
+              
+          <li
+          onClick={() => deleteTodo(todo.id)}
+            
+            key={todo.id}>{todo.content}</li>
         ))}
       </ul>
-    </div>
+      <div>
+        🥳 App successfully hosted. Try creating a new todo.
+        <br />
+        <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
+          Review next step of this tutorial.
+        </a>
+      </div>
+
+            <button onClick={signOut}>Sign out</button>
+    </main>
   );
 }
 
