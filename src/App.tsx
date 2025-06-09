@@ -5,7 +5,14 @@ import { generateClient } from "aws-amplify/data";
 
 const client = generateClient<Schema>();
   
-  
+ const { errors, data: newTodo } = await client.models.Todo.create(
+  {
+    content: 'My new todo',
+  },
+  {
+    authMode: 'userPool',
+  }
+); 
 
 
 function App() {
