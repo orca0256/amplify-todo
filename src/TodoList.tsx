@@ -4,6 +4,7 @@ import { generateClient } from "aws-amplify/data";
 
 const client = generateClient<Schema>();
 
+
 export default function TodoList() {
   const [todos, setTodos] = useState<Schema["Todo"]["type"][]>([]);
 
