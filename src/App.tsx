@@ -12,27 +12,21 @@ function App() {
   const [todos, setTodos] = useState<Schema["Todo"]["type"][]>([]);
 
   useEffect(() => {
-    let subscription;
-    if (user) {
-      // ユーザーがログインしているときのみ subscribe
-      subscription = client.models.Todo
-        .observeQuery({ authMode: "userPool" })
-        .subscribe({
-          next: ({ items }) => setTodos(items),
-          error: (err) => console.error(err),
-        });
-    } else {
-      // ログアウト時にはリストをクリア
-      setTodos([]);
-    }
+    // 型注釈を追加：unsubscribe() メソッドだけあれば OK
+    const subscription: { unsubscribe(): void } = client.models.Todo
+      .observeQuery({ authMode: "userPool" })
+      .subscribe({
+        next: ({ items }) => setTodos(items),
+        error: (err) => console.error(err),
+      });
 
-    return () => subscription?.unsubscribe();
-  }, [user]);
+    return () => subscription.unsubscribe();
+  }, [user]); // ユーザー依存にしておくとさらに安全です
 
-  // create 時にも authMode を指定
   async function createTodo() {
+    if (!user) return; // non-null ガード
     const content = window.prompt("Todo content");
-    if (!content || !user) return;
+    if (!content) return;
 
     const { data, errors } = await client.models.Todo.create(
       { content },
@@ -46,10 +40,8 @@ function App() {
     }
   }
 
-  // delete 時にも authMode を指定
   async function deleteTodo(id: string) {
-    if (!user) return;
-
+    if (!user) return; // non-null ガード
     const { errors } = await client.models.Todo.delete(
       { id },
       { authMode: "userPool" }
@@ -85,7 +77,5 @@ function App() {
     </main>
   );
 }
-
-export default App;
 
 
