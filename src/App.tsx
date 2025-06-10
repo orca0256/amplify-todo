@@ -5,75 +5,57 @@ import { generateClient } from "aws-amplify/data";
 
 const client = generateClient<Schema>();
   
+  
 
 
 function App() {
-  const { user, signOut } = useAuthenticator();
-  const [todos, setTodos] = useState<Schema["Todo"]["type"][]>([]);
 
+    const { user, signOut } = useAuthenticator();
+
+
+  
+  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
+  
+  
+
+  
   useEffect(() => {
-    // 型注釈を追加：unsubscribe() メソッドだけあれば OK
-    const subscription: { unsubscribe(): void } = client.models.Todo
-      .observeQuery({ authMode: "userPool" })
-      .subscribe({
-        next: ({ items }) => setTodos(items),
-        error: (err) => console.error(err),
-      });
+    client.models.Todo.observeQuery().subscribe({
+      next: (data) => setTodos([...data.items]),
+    });
+  }, []);
 
-    return () => subscription.unsubscribe();
-  }, [user]); // ユーザー依存にしておくとさらに安全です
-
-  async function createTodo() {
-    if (!user) return; // non-null ガード
-    const content = window.prompt("Todo content");
-    if (!content) return;
-
-    const { data, errors } = await client.models.Todo.create(
-      { content },
-      { authMode: "userPool" }
-    );
-
-    if (errors) {
-      console.error("Create error:", errors);
-    } else {
-      console.log("Created:", data);
-    }
+  function createTodo() {
+    client.models.Todo.create({ content: window.prompt("Todo content") });
+  }
+    function deleteTodo(id: string) {
+    client.models.Todo.delete({ id })
   }
 
-  async function deleteTodo(id: string) {
-    if (!user) return; // non-null ガード
-    const { errors } = await client.models.Todo.delete(
-      { id },
-      { authMode: "userPool" }
-    );
-    if (errors) console.error("Delete error:", errors);
-  }
 
   return (
     <main>
-      <h1>{user?.signInDetails?.loginId}’s todos</h1>
-      <button onClick={createTodo} disabled={!user}>
-        + new
-      </button>
+     <h1>{user?.signInDetails?.loginId}'s todos</h1>
+      <button onClick={createTodo}>+ new</button>
       <ul>
         {todos.map((todo) => (
-          <li key={todo.id} onClick={() => deleteTodo(todo.id)}>
-            {todo.content}
-          </li>
+     
+              
+          <li
+          onClick={() => deleteTodo(todo.id)}
+            
+            key={todo.id}>{todo.content}</li>
         ))}
       </ul>
       <div>
         🥳 App successfully hosted. Try creating a new todo.
         <br />
-        <a
-          href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
           Review next step of this tutorial.
         </a>
       </div>
-      <button onClick={signOut}>Sign out</button>
+
+            <button onClick={signOut}>Sign out</button>
     </main>
   );
 }
