@@ -12,7 +12,7 @@ const schema = a.schema({
       content: a.string(),
       isDone: a.boolean()
     })
-   .authorization(allow => [allow.owner().to(['create', 'read', 'update'])]),
+.authorization(allow => [allow.owner()]),
 });
 
 // Used for code completion / highlighting when making requests from frontend
